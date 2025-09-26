@@ -103,14 +103,23 @@ class PracticeQuestion(BaseModel):
     language: str = "python"
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
-# Utility functions
-def verify_password(plain_password, hashed_password):
-    return pwd_context.verify(plain_password, hashed_password)
+import hashlib
+import secrets
 
+# Simple password hashing using hashlib (for testing purposes)
 def get_password_hash(password):
-    # Truncate password to 72 bytes for bcrypt compatibility
-    password_bytes = password.encode('utf-8')[:72]
-    return pwd_context.hash(password_bytes.decode('utf-8'))
+    # Use a simple but secure approach for testing
+    salt = secrets.token_hex(16)
+    password_hash = hashlib.pbkdf2_hmac('sha256', password.encode('utf-8'), salt.encode('utf-8'), 100000)
+    return f"{salt}:{password_hash.hex()}"
+
+def verify_password(plain_password, hashed_password):
+    try:
+        salt, stored_hash = hashed_password.split(':')
+        password_hash = hashlib.pbkdf2_hmac('sha256', plain_password.encode('utf-8'), salt.encode('utf-8'), 100000)
+        return password_hash.hex() == stored_hash
+    except:
+        return False
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     to_encode = data.copy()
